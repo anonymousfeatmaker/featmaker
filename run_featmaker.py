@@ -41,7 +41,7 @@ if __name__=="__main__":
     parser.add_argument("--pgm", required=True)
     parser.add_argument("--exp_base", required=True)
     
-    parser.add_argument("--core", type=int, default=20)
+    parser.add_argument("--core", type=int, default=1)
     parser.add_argument("--time_budget", type=int, default=86400)
     parser.add_argument("--base_time", type=int, default=120)
     parser.add_argument("--n_heuristics", type=int, default=20)
