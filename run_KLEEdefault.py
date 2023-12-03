@@ -112,7 +112,6 @@ if __name__=="__main__":
 
         if level != 0:
             fg.collect(level)
-            overhead_time_start = time.time()
             
         remaining_time -= time.time() - start_time
         executed_time = ke.execute_klee(level, remaining_time)
