@@ -22,4 +22,4 @@ The following plot illustrates the branch coverage obtained by testing find-4.7.
 $ python3 run_featmaker.py --pgm find --exp_base FeatMaker --time_budget 18000
 $ python3 run_KLEEdefault.py --pgm find --exp_base kleeDefault --time_budget 18000
 ```
-![find-coverage-comparison](coverage.pdf)
+![find-coverage-comparison](./coverage.png)
