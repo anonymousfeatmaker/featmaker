@@ -19,6 +19,6 @@ $python3 run_featmaker.py --pgm {target program} --exp_base {name of directory y
 ## Performance comparison between FeatMaker and KLEE default.
 The following plot illustrates the branch coverage obtained by testing find-4.7.0 with featmaker and KLEE default for 5 hours each. We took each experiment with following command:
 ```bash
-#python3 run_featmaker.py --pgm find --exp_base FeatMaker --core 1
-#python3 run_KLEEdefault.py --pgm find --exp_base kleeDefault
+$ python3 run_featmaker.py --pgm find --exp_base FeatMaker --core 1
+$ python3 run_KLEEdefault.py --pgm find --exp_base kleeDefault
 ```
