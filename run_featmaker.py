@@ -114,7 +114,6 @@ if __name__=="__main__":
 
         if level != 0:
             fg.collect(level)
-            overhead_time_start = time.time()
             fg.extract_feature(level)
             wg.generate_weight(level)
             
