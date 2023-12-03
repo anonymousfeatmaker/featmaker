@@ -10,10 +10,17 @@ $ docker run -it --ulimit='stack=-1:-1' featmaker
 ```
 
 ## How to run FeatMaker
-There are two required parameters 'pgm(target program)' and 'exp_base(name of experiment directory)'.
-If you have built docker container using a [docker file](Dockerfile), only find-4.7.0 would be built. If you want to test other programs, please refer to the [README.md](benchmarks/README.md). The results will be saved in the featmaker_experiments/{exp_base}/{pgm} directory.
+You can run FeatMaker with following command. There are two required parameters 'pgm(target program)' and 'exp_base(name of experiment directory)'. If you have built docker container using a [docker file](Dockerfile), only find-4.7.0 would be built. If you want to test other programs, please refer to the [README.md](benchmarks/README.md). 
 ```bash
-$python3 run_featmaker.py --pgm {target program} --exp_base {name of directory you want to create}
+$ python3 run_featmaker.py --pgm {target program} --exp_base {name of directory you want to create}
+```
+The results will be saved in the featmaker_experiments/{exp_base}/{pgm} directory. FeatMaker saves its all data per each iteration, and you can load the data with python pickle package. 
+```python
+>>> import pickle
+>>> with open("featmaker_experiments/{exp_base}/{pgm}/data/{iteration}.pkl", 'rb') as f:
+        data = pickle.load(f)
+# print # of covered branches
+>>> print(len(data['branches']))
 ```
 
 ## Performance of FeatMaker
