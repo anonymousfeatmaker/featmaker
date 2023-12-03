@@ -16,7 +16,7 @@ If you have built docker container using a [docker file](Dockerfile), only find-
 $python3 run_featmaker.py --pgm {target program} --exp_base {name of directory you want to create}
 ```
 
-## Performance comparison between FeatMaker and KLEE default.
+## Performance of FeatMaker
 The following plot illustrates the branch coverage obtained by testing find-4.7.0 with featmaker and KLEE default for 5 hours each. We took each experiment with following command:
 ```bash
 $ python3 run_featmaker.py --pgm find --exp_base FeatMaker --time_budget 18000
