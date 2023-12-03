@@ -15,7 +15,7 @@ You can run FeatMaker with following command. There are two required parameters 
 $ python3 run_featmaker.py --pgm {target program} --exp_base {name of directory you want to create}
 ```
 The results will be saved in the featmaker_experiments/{exp_base}/{pgm} directory. FeatMaker saves its all data per each iteration, and you can load the data with python pickle package. 
-```python
+```
 >>> import pickle
 >>> with open("featmaker_experiments/{exp_base}/{pgm}/data/{iteration}.pkl", 'rb') as f:
         data = pickle.load(f)
