@@ -69,3 +69,4 @@ WORKDIR ${BASE_DIR}/benchmarks
 RUN ls ${BASE_DIR}/benchmarks
 RUN chmod 777 -R *
 RUN ./make-benchmark.sh --n-objs 1 find-4.7.0
+WORKDIR ${BASE_DIR}
