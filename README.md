@@ -31,4 +31,10 @@ The following plot illustrates the branch coverage obtained by testing find-4.7.
 $ python3 run_featmaker.py --pgm find --exp_base FeatMaker --time_budget 18000
 $ python3 run_KLEEdefault.py --pgm find --exp_base kleeDefault --time_budget 18000
 ```
+
+## Drawing plot
+We provided simple code, [drawplot.py](drawplot.py) to visualize result of each experiments. Default data directory and labels are same with "exp_base" value of above commands. Please modify two variables : **result_dirs** and **labels** at line 8-9 of [drawplot.py](drawplot.py). With simple command as below, graph comparing each result would be generated.
+```bash
+$ python3 drawplot.py
+```
 ![find-coverage-comparison](./coverage.png)
