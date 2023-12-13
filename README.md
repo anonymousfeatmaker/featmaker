@@ -5,6 +5,7 @@ FeatMaker automatically generates state features & search strategy for symbolic 
 ## Installation
 We recommend to use a [docker file](Dockerfile) for easy and fast installation. To install FeatMaker on local, please follow the instructions on [docker file](Dockerfile)
 ```bash
+$ git clone https://github.com/anonymousfeatmaker/featmaker.git
 $ docker build -t featmaker .
 $ docker run -it --ulimit='stack=-1:-1' featmaker
 ```
