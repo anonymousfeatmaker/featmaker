@@ -249,30 +249,30 @@ function build_multiple_llvm_obj () {
     return $retcode
 }
 
-function build_gawk-5.2.1 () {
+function build_gawk-5.1.0 () {
     cd $BASE_DIRECTORY
-    log INFO "Downloading: gawk-5.2.1"
-    download_source_tgz gawk-5.2.1 https://ftp.gnu.org/gnu/gawk/gawk-5.2.1.tar.gz
+    log INFO "Downloading: gawk-5.1.0"
+    download_source_tgz gawk-5.1.0 https://ftp.gnu.org/gnu/gawk/gawk-5.1.0.tar.gz
     downloaded=$?
     if [ $downloaded -ne 0 ]; then
-        log FAIL "Failed to build gawk-5.2.1"
+        log FAIL "Failed to build gawk-5.1.0"
         return 1
     fi
 
-    cd $BASE_DIRECTORY/gawk-5.2.1
-    log INFO "Build gcov object: gawk-5.2.1"
+    cd $BASE_DIRECTORY/gawk-5.1.0
+    log INFO "Build gcov object: gawk-5.1.0"
     build_multiple_gcov_obj obj-gcov gawk
     if [ $? -ne 0 ] ; then
-        log FAIL "Failed to build gcov object: gawk-5.2.1"
+        log FAIL "Failed to build gcov object: gawk-5.1.0"
     fi
 
-    cd $BASE_DIRECTORY/gawk-5.2.1
-    log INFO "Build LLVM object: gawk-5.2.1"
+    cd $BASE_DIRECTORY/gawk-5.1.0
+    log INFO "Build LLVM object: gawk-5.1.0"
     build_multiple_llvm_obj obj-llvm gawk.bc
     if [ $? -ne 0 ] ; then
-        log FAIL "Failed to build LLVM object: gawk-5.2.1"
+        log FAIL "Failed to build LLVM object: gawk-5.1.0"
     fi
-    log INFO "Build process finished: gawk-5.2.1"
+    log INFO "Build process finished: gawk-5.1.0"
 }
 
 function build_gcal-4.1 () {
@@ -638,7 +638,7 @@ function list () {
     cat <<-EOF
 Benchmark lists
     sqlite-3.33.0
-    gawk-5.2.1
+    gawk-5.1.0
     gcal-4.1
     find-4.7.0      findutils-4.7.0
     grep-3.6
@@ -660,7 +660,7 @@ EOF
 function build () {
     case $1 in
     "sqlite-3.33.0") build_sqlite-3.33.0;;
-    "gawk-5.2.1") build_gawk-5.2.1;;
+    "gawk-5.1.0") build_gawk-5.1.0;;
     "gcal-4.1") build_gcal-4.1;;
     "find-4.7.0") build_find-4.7.0;;
     "grep-3.6") build_grep-3.6;;
@@ -700,7 +700,7 @@ if [ "$1" = "--n-objs" ] ; then
 fi
 
 if [ "$1" = "all" ] ; then
-    benchmarks="sqlite-3.33.0 gawk-5.2.1 gcal-4.1 find-4.7.0 grep-3.6 diff-3.7 du-8.32 make-4.3 patch-2.7.6 ptx-8.32 expr-8.32 csplit-8.32 ls-8.32 trueprint-5.4 combine-0.4.0"
+    benchmarks="sqlite-3.33.0 gawk-5.1.0 gcal-4.1 find-4.7.0 grep-3.6 diff-3.7 du-8.32 make-4.3 patch-2.7.6 ptx-8.32 expr-8.32 csplit-8.32 ls-8.32 trueprint-5.4 combine-0.4.0"
 else
     benchmarks=$@
 fi
