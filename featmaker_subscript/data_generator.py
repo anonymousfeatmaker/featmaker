@@ -34,7 +34,7 @@ class data_generator:
         self.n_weights = options.n_scores
         self.gcda_list = os.popen(f'find {os.path.abspath(self.pconfig["gcov_path"])} -name "*.gcno"').read().replace('\n',' ').replace("gcno", "gcda")
         # self.gcov_list = self.gcda_list.replace("gcda", "gcov")
-        self.gcov_dir = os.path.abspath(f"{self.pconfig['gcov_path']}1/{self.pconfig['exec_dir']}")
+        self.gcov_dir = os.path.abspath(f"{self.pconfig['gcov_path']}/{self.pconfig['exec_dir']}")
         self.bin_dir = os.path.abspath('klee/build/bin')
         self.gcda_file = self.pconfig["gcda_file"]
         self.gcov_file = self.pconfig["gcov_file"]
