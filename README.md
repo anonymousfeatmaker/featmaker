@@ -10,7 +10,7 @@ $ docker run --rm -it --ulimit='stack=-1:-1' skkusal/featmaker
 ```
 ## Benchmarks
 In the docker image, all 15 benchmarks we used are installed in 'root/featmaker/benchmarks'. Details of Benchmakrs are as follow:
-(./benchmarks_detail.pdf)
+![benchmark_table](./benchmarks_detail.pdf)
 ## How to run FeatMaker
 You can run FeatMaker with following command in 'root/featmaker' directory. There are two required parameters 'pgm(target program)' and 'output_dir(name of experiment directory)'. 
 ```bash
