@@ -14,7 +14,7 @@ $ docker run -it --ulimit='stack=-1:-1' featmaker
 ## How to run FeatMaker
 You can run FeatMaker with following command. There are two required parameters 'pgm(target program)' and 'exp_base(name of experiment directory)'. If you have built docker container using a [docker file](Dockerfile), only find-4.7.0 would be built. If you want to test other programs, please refer to the [README.md](benchmarks/README.md). 
 ```bash
-$ python3 run_featmaker.py --pgm {target program} --exp_base {name of directory you want to create}
+$ python3 run_featmaker.py --pgm {target program} --output_dir {name of output directory}
 ```
 The results will be saved in the featmaker_experiments/{exp_base}/{pgm} directory. FeatMaker saves its all data per each iteration, and you can load the data with python pickle package. 
 ```
@@ -28,8 +28,8 @@ The results will be saved in the featmaker_experiments/{exp_base}/{pgm} director
 ## Performance of FeatMaker
 The following plot illustrates the branch coverage obtained by testing find-4.7.0 with featmaker and KLEE default for 5 hours each. We took each experiment with following command:
 ```bash
-$ python3 run_featmaker.py --pgm find --exp_base FeatMaker --time_budget 18000
-$ python3 run_KLEEdefault.py --pgm find --exp_base kleeDefault --time_budget 18000
+$ python3 run_featmaker.py --pgm find --output_dir FeatMaker --time_budget 18000
+$ python3 run_KLEEdefault.py --pgm find --output_dir kleeDefault --time_budget 18000
 ```
 
 ## Drawing plot
