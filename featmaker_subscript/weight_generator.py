@@ -1,12 +1,11 @@
-import random
-import os
 import numpy as np
-import pickle
 import re
 from sklearn.cluster import KMeans
 
+lv_hp=8
+
 class random_weight_generator:
-    def __init__(self, data, top_dir, n_weights, kvalue):
+    def __init__(self, data, top_dir, n_weights, kvalue=None):
         self.data = data
         self.top_dir = top_dir
         self.n_weights = n_weights
@@ -17,68 +16,48 @@ class random_weight_generator:
         tmp_w = np.random.uniform(-10, 10, size=self.n_features)
         return [str(x) for x in tmp_w]
     
-    def generate_weight(self, level):
-        if level != 0:
+    def generate_weight(self, iteration):
+        if iteration != 0:
             self.feature_idx = {}
             self.n_features = len(self.data["features"])
-            with open(f"{self.top_dir}/features/{level}.f", 'w') as f:
+            with open(f"{self.top_dir}/features/{iteration}.f", 'w') as f:
                 for feat in self.data["features"]:
                     f.write(feat+"\n")
                     self.feature_idx[len(self.feature_idx)] = feat
-        for i in range(1,self.n_weights+1):
-            with open(f"{self.top_dir}/weight/{level}/{i}.w", 'w') as f:
+        for i in range(self.n_weights):
+            with open(f"{self.top_dir}/weight/iteration-{iteration}/{i}.w", 'w') as f:
                 for w in self.random_weight():
                     f.write(f"{w}\n")
 
 class learning_weight_generator:
-    def __init__(self, data, top_dir, n_weights, kvalue):
+    def __init__(self, data, top_dir, n_scores, kvalue=3):
         self.data = data
         self.top_dir = top_dir
-        self.n_weights = n_weights
-        self.n_exploit = int(n_weights * 0.7)
-        self.lv_hp = self.data["lv_hp"]
-        self.abstract_level = self.data["abstraction_level"]
+        self.n_weights = n_scores
         self.feature_idx = {}
-        self.classifier = KMeans(kvalue)
+        self.classifier = KMeans(kvalue,n_init='auto')
 
-    def abstract_condition(self, lines):
-        if self.abstract_level == 0:
-            return set(lines)
+    def abstract_condition(self,lines):
         result = set()
-        largeValRe = re.compile("\\d{"+str(self.lv_hp)+",}")
-        if self.abstract_level == 1:
-            for line in lines:
-                result.add(re.sub(largeValRe, "LargeValue", line))        
-        elif self.abstract_level == 2:
-            for line in lines:
-                line = re.sub(largeValRe, "LargeValue", line)  
-                result.add(re.sub("const_arr\\d+", "const_arr", line))
-        elif self.abstract_level == 3:
-            for line in lines:
-                result.add(re.sub("const_arr\\d+", "const_arr", line))
+        largeValRe = re.compile("\\d{"+str(lv_hp)+",}")
+        for line in lines:
+            result.add(re.sub(largeValRe, "LargeValue", line))        
         return result
-
-    def get_pc(self, ktest):
-        kquery = ktest.split('.')[0] + '.kquery'
-        with open(kquery, 'r', errors='ignore') as f:
-            lines = f.read().split('(query [\n')
-        lines = lines[1].split('\n')[:-2]
-        return lines
 
     def get_scores(self):
         scores = (self.data["widx_info"])/(self.data["widx_info"].max(axis=0)+ 1)
         scores = scores.sum(axis=1)
         return scores
                     
-    def write_feature_file(self, level):
-        with open(f"{self.top_dir}/features/{level}.f", 'w') as f:
+    def write_feature_file(self, iteration):
+        with open(f"{self.top_dir}/features/{iteration}.f", 'w') as f:
             feature_list = sorted(self.feature_idx.keys(), key=lambda x: self.feature_idx[x])
             for feature in feature_list:
                 f.write(feature+"\n")
 
-    def write_weight_file(self, level):
-        for widx in range(1, self.n_weights+1):
-            with open(f"{self.top_dir}/weight/{level}/{widx}.w", 'w') as f:
+    def write_weight_file(self, iteration):
+        for widx in range(self.n_weights):
+            with open(f"{self.top_dir}/weight/iteration-{iteration}/{widx}.w", 'w') as f:
                 for w in self.weights[:,widx-1]:
                     f.write(f"{w}\n")
 
@@ -88,25 +67,24 @@ class learning_weight_generator:
             tmp_encountered |= self.abstract_condition(self.data["unique pc"][pcidx])
         return tmp_encountered
         
-    def generate_weight(self, level):
-        if level == 1:
+    def generate_weight(self, iteration):
+        if iteration == 1:
             self.feature_idx = {}
             for feat in self.data["features"]:
                 self.feature_idx[feat] = len(self.feature_idx)
             self.weights = np.random.uniform(-10, 10, (len(self.data["features"]), self.n_weights))
         else:
             remaining_features = list(set(self.feature_idx.keys()) & self.data["features"])
-            remaining_distribution = {}
             
             if len(remaining_features) != 0:
                 feature_encountered_score = np.zeros(self.n_weights)
                 encountered_weights = np.zeros((len(remaining_features), self.n_weights))
-                for widx in range(1, self.n_weights + 1):
-                    encountered_features = self.gather_encountered_features(self.data["widx_pcidxes"][widx - 1])
-                    feature_encountered_score[widx-1] = len(encountered_features)
+                for widx in range(self.n_weights):
+                    encountered_features = self.gather_encountered_features(self.data["widx_pcidxes"][widx])
+                    feature_encountered_score[widx] = len(encountered_features)
                     for i, feat in enumerate(remaining_features):
                         if feat in encountered_features:
-                            encountered_weights[i][widx - 1] = 1
+                            encountered_weights[i][widx] = 1
                 encountered_weights *= self.weights[np.array([self.feature_idx[x] for x in remaining_features])]
                 self.feature_idx = {}
                 for feat in self.data["features"]:
@@ -141,28 +119,21 @@ class learning_weight_generator:
                         continue
                     elif np.isnan(tm) and not np.isnan(bm):
                         self.weights[self.feature_idx[remaining_features[i]]] = -1 * np.abs(self.weights[self.feature_idx[remaining_features[i]], :self.n_weights])
-                        remaining_distribution[remaining_features[i]] = (-10,-10)
+
                     elif not np.isnan(tm) and np.isnan(bm):
                         self.weights[self.feature_idx[remaining_features[i]]] = np.random.normal(tm, ts, self.n_weights)
-                        remaining_distribution[remaining_features[i]] = (tm, ts)
+
                     elif np.abs(tm-bm) + np.abs(ts - bs) >= 1:
                         self.weights[self.feature_idx[remaining_features[i]]] = np.random.normal(tm, ts, self.n_weights)
-                        remaining_distribution[remaining_features[i]] = (tm, ts)
+
                 self.weights[self.weights > 10] = 10
                 self.weights[self.weights < -10] = -10
-                with open(f"{self.top_dir}/weight/{level}_dist.pkl", 'wb') as f:
-                    pickle.dump(remaining_distribution, f)
+
             else:
                 self.feature_idx = {}
                 for feat in self.data["features"]:
                     self.feature_idx[feat] = len(self.feature_idx)
                 self.weights = np.random.uniform(-10, 10, (len(self.data["features"]), self.n_weights))
             
-        self.write_feature_file(level)
-        self.write_weight_file(level)
-
-
-weight_generators = {
-    "random" : random_weight_generator,
-    "learn" : learning_weight_generator,
-}
+        self.write_feature_file(iteration)
+        self.write_weight_file(iteration)
