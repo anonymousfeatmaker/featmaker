@@ -58,26 +58,6 @@ using namespace llvm;
 namespace klee {
   extern RNG theRNG;
 }
-namespace {
-cl::OptionCategory
-    AbstractCat("Path condition abstraction options",
-                  "This option controls abstraction level");
-
-cl::opt<unsigned> AbstractLevel(
-    "abstraction-level", cl::init(0),
-    cl::desc(
-        "Abstraction level"
-        "0 : No abstraction"
-        "1 : abstract large value"
-        "2 : abstract argument & values"
-        "3 : abstract to most simple expression"),
-    cl::cat(AbstractCat));
-
-cl::opt<std::string> LargeValueThreshold(
-    "largevalue-threshold", cl::init("8"),
-    cl::desc("Abstract large values which have more number of digits than threshold"),
-    cl::cat(AbstractCat));
-} // namespace
 
 Searcher::~Searcher() {
 }
@@ -525,7 +505,7 @@ AutoFeatureSearcher::AutoFeatureSearcher(const std::string &weightFile,
   while (win >> weight){
     weights.push_back(weight);
   }
-  largeValueRe = std::regex("\\d{"+LargeValueThreshold+",}");
+  largeValueRe = std::regex("\\d{8,}");
   constArrRe = std::regex("const_arr\\d+");
 }
 
@@ -551,19 +531,8 @@ ExecutionState &AutoFeatureSearcher::selectState() {
 
 std::string AutoFeatureSearcher::abstractCond(std::string line){
   std::string result = line;
-  
-  switch(AbstractLevel){
-    case 2:
-      result = std::regex_replace(result, constArrRe, "const_arr");
-    case 1:
-      result = std::regex_replace(result, largeValueRe, "LargeValue");
-      return result;
-    case 3:
-      result = std::regex_replace(result, constArrRe, "const_arr");
-      return result;
-    default:
-      return result;
-  }
+  result = std::regex_replace(result, largeValueRe, "LargeValue");
+  return result;
 }
 
 double AutoFeatureSearcher::getWeight(ExecutionState *es) {
