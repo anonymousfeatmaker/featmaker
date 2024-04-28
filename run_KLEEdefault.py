@@ -3,130 +3,116 @@ import json
 import time
 import os
 import argparse
+import optparse
 
 from featmaker_subscript import klee_executor_default
 from featmaker_subscript import data_generator
 from featmaker_subscript import feature_generator
-from featmaker_subscript import weight_generator
 
-exp_dir = "featmaker_experiments"
-
-option_choices={
-    "collect_func": ["pcidx", 'naive'],
-    "cluster_func":["minset", "naive"],
-    "weight_func":["random", "learn"],
-    "abstract_level": range(0,4)
-}
+exp_dir = "original-klee_experiments"
 
 def load_pgm_config(config_file):
     with open(config_file, 'r') as f:
         parsed = json.load(f)
     return parsed
 
-def kill_processes(pgm, top_dir):
-    info_files = f"{top_dir}/*/*/*/info"
-    info_lists = os.popen(f"ls {info_files}").read().split()
-    for info in info_lists:
-        with open(info, 'r') as f:
-            lines = f.read().split('\n')
-        if(len(lines) < 10):
-            pid = lines[1].split()[1]
-            os.system(f"kill -9 {pid}")
-
-
 if __name__=="__main__":
-    parser = argparse.ArgumentParser()
-    
-    #Necessary options
-    parser.add_argument("--pgm", required=True)
-    parser.add_argument("--exp_base", required=True)
-    
-    parser.add_argument("--core", type=int, default=1)
-    parser.add_argument("--time_budget", type=int, default=86400)
-    parser.add_argument("--base_time", type=int, default=120)
-    parser.add_argument("--n_heuristics", type=int, default=20)
-    
-    #Task options
-    parser.add_argument("--main_task", default="featmaker", choices=["featmaker", "naive"])
-    
-    #Branch-condition abstract options
-    parser.add_argument("--abstract_level", type=int, default=1, choices=option_choices["abstract_level"])
-    parser.add_argument("--lv_hp", type=int, default=8)
-    parser.add_argument("--kvalue", type=int, default=3)
+    parser = optparse.OptionParser()
+    # Required Options
+    parser.add_option(
+        "--pgm",
+        dest="pgm",
+        help="Benchmarks : combine, csplit, diff, du, expr, find, gawk, gcal, grep, ls, make, patch, ptx, sqlite, trueprint",
+        choices=["combine", "csplit", "diff", "du", "expr", "find", "gawk", "gcal", "grep", "ls", "make", "patch", "ptx", "sqlite", "trueprint"]
+    )
+    parser.add_option(
+        "--output_dir",
+        dest="output_dir",
+        help="Result directory"
+    )
+    # Default Options
+    parser.add_option(
+        "--total_budget",
+        dest="total_time",
+        type="int",
+        default=86400,
+        help="Total time budget (sec) (Default: 86400 = 24h)"
+    )
+    parser.add_option(
+        "--small_budget",
+        dest="small_time",
+        type="int",
+        default=120,
+        help="small time budget (sec) (Default: 120)"
+    )
+    parser.add_option(
+        "--n_scores",
+        dest="n_scores",
+        type="int",
+        default=20,
+        help="The number of score functions in one iteration (Default: 20)"
+    )
+    parser.add_option(
+        "--main_option",
+        dest="main_option",
+        default="naive",
+    )
 
-
-    args = parser.parse_args()
+    (options, args) = parser.parse_args()
     
-    heuristics_per_level = args.n_heuristics
-    pgm = args.pgm
-    max_core = args.core
-    time_budget = args.time_budget
-    base_time = args.base_time
-    exp_base = args.exp_base
-    
-    extract_options = {
-        "abstract_level" : args.abstract_level,
-        "lv_hp" : args.lv_hp,
-    }
-    
-    collect_func = "pcidx"
-    cluster_func = "setcover"
-    weight_func = "learn"
-    
-    if args.main_task == 'naive':
-        collect_func = "naive"
-        cluster_func = "naive"
-        weight_func = "random"
-        extract_options['abstract_level'] = 0
-    
-    kvalue = args.kvalue
-    
-    pconfig = load_pgm_config(f"pgm_config/{pgm}.json")
-    top_dir = os.path.abspath(f"{exp_dir}/{exp_base}/{pgm}")
+    if options.pgm is None:
+        print("Required option is empty: pgm")
+        exit(1)
+        
+    if options.output_dir is None:
+        print("Required option is empty: output_dir")
+        exit(1)
+            
+    pgm = options.pgm
+    output_dir = options.output_dir     
+        
+    top_dir = os.path.abspath(f"{exp_dir}/{output_dir}/{pgm}")
     root_dir = os.getcwd()
     data = {}
     if not os.path.exists(top_dir):
         os.makedirs(top_dir)
         os.mkdir(f"{top_dir}/result")
-        os.mkdir(f"{top_dir}/features")
+        os.mkdir(f"{top_dir}/errors")
         os.mkdir(f"{top_dir}/data")
     else:
-        print("Experiment directory with same name is already existing")
-        exit()
+        print("Output directory is already existing")
+        exit(1)
     
+    pconfig = load_pgm_config(f"pgm_config/{pgm}.json")
     llvm_dir = os.path.abspath(pconfig["pgm_dir"])
-    for c in range(1, max_core + 1):
-        os.system(f"cp -r {llvm_dir} {top_dir}/Core{c}")
+    os.system(f"cp -r {llvm_dir} {top_dir}/")
 
-    ke = klee_executor_default.klee_executor(pconfig, max_core, top_dir, heuristics_per_level, base_time, extract_options)
-    dg = data_generator.data_generator(pconfig, max_core, top_dir, heuristics_per_level, weight_func)
-    fg = feature_generator.feature_generator(data, collect_func, cluster_func, extract_options, top_dir, heuristics_per_level)
+    ke = klee_executor_default.klee_executor(pconfig, top_dir, options)
+    dg = data_generator.data_generator(pconfig, top_dir, options)
+    fg = feature_generator.feature_generator(data, top_dir, options)
 
-    remaining_time = time_budget
-    level = 0
-    while remaining_time > 0:
-        
-        start_time = time.time()
-        os.makedirs(f"{top_dir}/result/{level}")
-        os.makedirs(f"{top_dir}/weight/{level}")
 
-        if level != 0:
-            fg.collect(level)
-            
-        remaining_time -= time.time() - start_time
-        executed_time = ke.execute_klee(level, remaining_time)
-        executed_time += dg.generate_data(level)
-        
-        remaining_time -= executed_time
-        level += 1
+    data = {}
+    start_time = time.time()
+    remaining_time = options.total_time
+    iteration = 0
+ 
+    while time.time() - start_time < options.total_time:    
 
-    fg.collect(level)
-    print(f"Ours finished!!")
-    os.chdir(f"{top_dir}")
+        os.mkdir(f"{top_dir}/result/iteration-{iteration}")
+        remaining_time = options.total_time - (time.time() - start_time)
+        ke.execute_klee(iteration, int(remaining_time))
+        iteration += 1
     
-    os.system("rm -rf Core*")
-    os.system("rm *_result")
+    print(f"Testing Done. Please wait for collecting data")
+    for i in range(iteration):
+        dg.generate_data(i)
+        fg.collect(i+1)
+    print("Colling Done")
+    os.chdir(top_dir)
+    
+    os.system("rm -rf obj-llvm")
+    os.system("rm *_result.pkl")
 
     os.chdir(root_dir)
-    kill_processes(pgm, top_dir)
             
