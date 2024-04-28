@@ -47,7 +47,7 @@ RUN echo "ulimit -s unlimited" >> /root/.bashrc
 WORKDIR ${BASE_DIR}
 RUN git clone https://github.com/klee/klee-uclibc.git
 WORKDIR ${BASE_DIR}/klee-uclibc
-RUN chmod 777 -R *
+# RUN chmod 777 -R *
 RUN ./configure --make-llvm-lib
 RUN make -j
 
@@ -69,5 +69,5 @@ RUN env -i /bin/bash -c '(source testing-env.sh; env > test.env)'
 WORKDIR ${BASE_DIR}/benchmarks
 RUN ls ${BASE_DIR}/benchmarks
 RUN chmod 777 -R *
-RUN ./make-benchmark.sh --n-objs 1 find-4.7.0
+RUN ./make-benchmark.sh all
 WORKDIR ${BASE_DIR}
