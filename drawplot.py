@@ -1,66 +1,72 @@
 import matplotlib.pyplot as plt
-import pickle
+import re
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
-pgm = "find"
-timebudget = 18000
-result_dirs = ["FeatMaker", "KLEEDefault"]
-labels = ["FeatMaker", "KLEE default"]
+def branch_handler(ktest_gcov):
+    with open(ktest_gcov, 'r', errors='ignore') as f:
+        lines = f.read().split('        -:    0:Source')[1:]
+    covered_branch = set()
+    for s in lines:
+        s = s.split('\n')
+        src_name = s[0].split('/')[-1]
+        line_number = 0
+        code_line_start = 1
+        while "0:" in s[code_line_start]: code_line_start += 1
+       
+        for l in s[code_line_start:]:
+            if ":" in l:
+                line_number += 1
+                continue                 
+            if 'taken' in l:
+                tmp = l.split()
+                if tmp[3] != '0%':
+                    covered_branch.add(f"{src_name}_{line_number}_{tmp[1]}")
+    # os.system(f"rm {ktest_gcov}")
+    return covered_branch
 
-def date_handler(line):
-    tokens = line.split()
-    date = datetime.strptime(f"{tokens[5]} {tokens[6].split('.')[0]}", "%Y-%m-%d %H:%M:%S")
-    ktest = tokens[-1].split('/')[-1]
-    return date, ktest
 
-def get_pc(ktest):
-    kquery = ktest.split('.')[0] + '.kquery'
-    if not os.path.exists(kquery):
-        return []
-    with open(kquery, 'r', errors='ignore') as f:
-        lines = f.read().split('(query [\n')
-    lines = lines[1].split('\n')[:-2]
-    return lines
+markers = ['D','^', 'o','p','v']
+colorss = ['r', 'b', 'y', 'c', 'g']
+line_style = ['solid', 'dotted', 'dashed', 'dashdot', (0, (3,1,1,1))]
 
-plt.figure(figsize=(6,4))
-plt.ylabel('# of covered branches', fontdict={'size': 12})
-plt.xlabel('time(h)', fontdict={'size': 12})
-plt.xticks(range(0,timebudget + 1,3600),labels=range(timebudget//3600 + 1))
-plt.grid(visible=True, linestyle="--", linewidth = "1")
 
-for idx, result_dir in enumerate(result_dirs):
-    result_base = f"featmaker_experiments/{result_dir}/{pgm}"
-    data_files = os.popen(f"ls {result_base}/data/*.pkl").read().split()
-    with open(f"{result_base}/data/{len(data_files)}.pkl", 'rb') as f:
-        data = pickle.load(f)
-    result = {}
-    covered_set = set()
-    start = None
-    for level in range(0,100):
-        if not os.path.exists(f"{result_base}/result/{level}"):
-            break 
-        for i in range(1, 50):
-            if not os.path.exists(f"{result_base}/result/{level}/{i}"):
-                break 
-            with open(f"{result_base}/result/{level}/{i}/time_result", 'r') as f:
-                lines = f.readlines()
+#key : labels of figure, value : output directory to draw 
+data_dict = {
+    "naive" : "/home/jaehan/dd-klee/anonymous_featmaker_test/naive_experiments/test2/combine",
+    "default" : "/home/jaehan/dd-klee/anonymous_featmaker_test/original-klee_experiments/test2/combine/"
+}
+
+time_coverage_data = {}
+for stgy, output_dir in data_dict.items():
+    covered_branches = set()
+    time_lst = []
+    coverage_lst = []
+    iteration=0
+    while os.path.exists(f"{output_dir}/result/iteration-{iteration}/time_result"):
+        with open(f"{output_dir}/result/iteration-{iteration}/time_result", 'r') as f:
+            lines = f.readlines()
             for l in lines:
-                date, ktest = date_handler(l)
-                pc = get_pc(f"{result_base}/result/{level}/{i}/{ktest}")
-                pcidx = data['unique pc'].index(pc)
-                for bsidx in range(len(data['unique branchset'])):
-                    if pcidx in data['bsidx_clusters'][bsidx]:
-                        covered_set |= data['unique branchset'][bsidx]
-                        break
-                if start == None:
-                    start = date
-                result[(date - start).seconds] = len(covered_set)
+                    filename = l.split()[-1]+"_gcov"
+                    covered_branches |= branch_handler(filename)
+                    creation_time = re.search(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', l).group(0)
+                    creation_time = datetime.strptime(creation_time, '%Y-%m-%d %H:%M:%S')
+                    coverage_lst.append(len(covered_branches))
+                    time_lst.append(creation_time)
+        iteration += 1
+    time_coverage_data[stgy] = (time_lst,coverage_lst)
 
-    x = sorted(result.keys())
-    y = sorted([result[_] for _ in x])
-    plt.plot(x,y, linewidth = "3.2", label=labels[idx])
+time_coverage_data = sorted(time_coverage_data.items(), key=lambda x: x[1][1][-1], reverse=True)
 
-
+plt.figure(figsize=(6,5))
+for marker_i, (stgy, (x, y)) in enumerate(time_coverage_data):
+    started_time = x[0]
+    x = [(t - started_time).total_seconds() for t in x]
+    plt.plot(x, y, linestyle=line_style[marker_i],color=colorss[marker_i],marker=markers[marker_i],markersize=9,markeredgecolor="black", markevery=len(y)//10, label=stgy, linewidth = "2.2")
+plt.legend()
+plt.ylabel('# of covered branches', fontdict={'size': 14})
+plt.xlabel('time', fontdict={'size': 14})
+plt.grid(visible=True, linestyle="--", linewidth = "1.5")
 plt.tight_layout()
-plt.savefig("coverage.png")
+
+plt.savefig(f'coverage_figure.pdf')
