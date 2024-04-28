@@ -38,7 +38,7 @@ RUN git checkout tags/2.3.3
 RUN mkdir build
 WORKDIR ${BASE_DIR}/stp/build
 RUN cmake ..
-RUN make
+RUN make -j
 RUN make install
 
 RUN echo "ulimit -s unlimited" >> /root/.bashrc
@@ -49,18 +49,19 @@ RUN git clone https://github.com/klee/klee-uclibc.git
 WORKDIR ${BASE_DIR}/klee-uclibc
 RUN chmod 777 -R *
 RUN ./configure --make-llvm-lib
-RUN make -j2
+RUN make -j
 
 # install klee
 ADD ./ ${BASE_DIR}
 WORKDIR ${BASE_DIR}/klee
 RUN echo "export LLVM_COMPILER=clang" >> /root/.bashrc
 RUN echo "KLEE_REPLAY_TIMEOUT=1" >> /root/.bashrc
+RUN rm -r build
 RUN mkdir build
 WORKDIR ${BASE_DIR}/klee/build
 RUN ls /root/featmaker
 RUN cmake -DENABLE_SOLVER_STP=ON -DENABLE_POSIX_RUNTIME=ON -DENABLE_UNIT_TESTS=OFF -DENABLE_SYSTEM_TESTS=OFF -DENABLE_KLEE_UCLIBC=ON -DKLEE_UCLIBC_PATH=${BASE_DIR}/klee-uclibc -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config -DLLVMCC=/usr/bin/clang ..
-RUN make
+RUN make -j
 WORKDIR ${BASE_DIR}/klee
 RUN env -i /bin/bash -c '(source testing-env.sh; env > test.env)'
 
