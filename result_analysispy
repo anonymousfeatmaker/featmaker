@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import re
 import os
+import tabulate
 from datetime import datetime, timedelta
+
 
 def branch_handler(ktest_gcov):
     with open(ktest_gcov, 'r', errors='ignore') as f:
@@ -25,6 +27,13 @@ def branch_handler(ktest_gcov):
     # os.system(f"rm {ktest_gcov}")
     return covered_branch
 
+def err_file_handler(err_file_name):
+    with open(err_file_name, 'r', errors='ignore') as f:
+        lines = f.readlines()
+    file_name = lines[1].split()[1]
+    line_no = lines[2].split()[1]
+    return f"{file_name} {line_no}"
+
 
 markers = ['D','^', 'o','p','v']
 colorss = ['r', 'b', 'y', 'c', 'g']
@@ -33,16 +42,23 @@ line_style = ['solid', 'dotted', 'dashed', 'dashdot', (0, (3,1,1,1))]
 
 #key : labels of figure, value : output directory to draw 
 data_dict = {
-    "naive" : "/home/jaehan/dd-klee/anonymous_featmaker_test/naive_experiments/test2/combine",
-    "default" : "/home/jaehan/dd-klee/anonymous_featmaker_test/original-klee_experiments/test2/combine/"
+    # Example : "featmaker" : "/root/featmaker/featmaker_experiments/test/find"
+    "featmaker" : "/root/featmaker/featmaker_experiments/test/find",
+    "naive" : "/root/featmaker/naive_experiments/test/find",
+    "Original KLEE" : "/root/featmaker/original-klee_experiments/test/find",
 }
 
 time_coverage_data = {}
+error_case_data = {}
+
 for stgy, output_dir in data_dict.items():
     covered_branches = set()
     time_lst = []
     coverage_lst = []
     iteration=0
+    if not os.path.exists(output_dir):
+        print(f"{output_dir} not found")
+        continue
     while os.path.exists(f"{output_dir}/result/iteration-{iteration}/time_result"):
         with open(f"{output_dir}/result/iteration-{iteration}/time_result", 'r') as f:
             lines = f.readlines()
@@ -55,6 +71,16 @@ for stgy, output_dir in data_dict.items():
                     time_lst.append(creation_time)
         iteration += 1
     time_coverage_data[stgy] = (time_lst,coverage_lst)
+    
+    with open(f"{output_dir}/error_inputs.txt", 'r') as f:
+        error_inputs = f.readlines()
+    for ktest in error_inputs:
+        err_file_name = os.popen(f"ls {ktest[:-5]}*.err 2>/dev/null").read()
+        if err_file_name != '':
+            bug_location = err_file_handler(err_file_name.strip('\n'))
+            if bug_location not in error_case_data:
+                error_case_data[bug_location] = set()
+            error_case_data[bug_location].add(stgy)
 
 time_coverage_data = sorted(time_coverage_data.items(), key=lambda x: x[1][1][-1], reverse=True)
 
@@ -68,5 +94,17 @@ plt.ylabel('# of covered branches', fontdict={'size': 14})
 plt.xlabel('time', fontdict={'size': 14})
 plt.grid(visible=True, linestyle="--", linewidth = "1.5")
 plt.tight_layout()
-
 plt.savefig(f'coverage_figure.pdf')
+
+bug_table = [["Bug location", "featmaker", "naive", "Original KLEE"]]
+for error_location in error_case_data:
+    r = [error_location]
+    for stgy in ["featmaker", "naive", "Original KLEE"]:
+        if stgy in error_case_data[error_location]:
+            r.append("O")
+        else:
+            r.append("X")
+    bug_table.append(r)
+with open(f'bug_table.md', 'w') as f:
+    f.write(tabulate.tabulate(bug_table, headers='firstrow', tablefmt='grid', stralign="center"))
+    f.write("\n")
