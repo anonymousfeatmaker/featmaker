@@ -51,10 +51,19 @@ The results will be saved in the 'featmaker_experiments/{output_dir}/{pgm}' dire
 3. weights : 'weights/iteration-\*/\*.w' files
 4. Error cases : 'results/error_inputs' file
 
-## Drawing plot
-For visualizing coverage data, we provided ’draw_plot.py’. You can generate a time-coverage graph with a simple command:
+## Visualizing results
+For visualizing results, we provided ’result_analysis.py’. You can generate a time-coverage graph, 'coverage_figure.pdf', and a bug table, 'bug_table.md', with a simple command:
 ```bash
-$ python3 draw_plot.py
+$ python3 result_analysis.py
+```
+![find-coverage-comparison](./coverage.png)
+```bash
+$ cat bug_table.md 
++-----------------------+-------------+---------+-----------------+
+|     Bug location      |  featmaker  |  naive  |  Original KLEE  |
++=======================+=============+=========+=================+
+| ../../src/field.c 385 |      O      |    X    |        X        |
++-----------------------+-------------+---------+-----------------+
 ```
 If you want to plot a graph with data from a directory different from the above example, please edit the ’data_dict’ dictionary in [draw_plot.py](./draw_plot.py). This dictionary uses labels of the data as keys and the locations where the data is stored as values.
-![find-coverage-comparison](./coverage.png)
+
