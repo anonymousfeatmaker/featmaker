@@ -129,8 +129,8 @@ if __name__=="__main__":
     os.chdir(top_dir)
     error_inputs = []
     for i in range(iteration):
-        if os.path.exists(f"{top_dir}/errors/{iteration}_potential_errors.pkl"):
-            with open(f"{top_dir}/errors/{iteration}_potential_errors.pkl", 'rb') as f:
+        if os.path.exists(f"{top_dir}/errors/{i}_potential_errors.pkl"):
+            with open(f"{top_dir}/errors/{i}_potential_errors.pkl", 'rb') as f:
                 error_inputs += pickle.load(f)
     with open(f"{top_dir}/error_inputs.txt", 'w') as f:
         f.write("\n".join(error_inputs))
