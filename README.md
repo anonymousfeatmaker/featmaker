@@ -65,5 +65,5 @@ $ cat bug_table.md
 | ../../src/field.c 385 |      O      |    X    |        X        |
 +-----------------------+-------------+---------+-----------------+
 ```
-If you want to plot a graph with data from a directory different from the above example, please edit the ’data_dict’ dictionary in [draw_plot.py](./draw_plot.py). This dictionary uses labels of the data as keys and the locations where the data is stored as values.
+If you want to plot a graph with data from a directory different from the above example, please edit the ’data_dict’ dictionary in [result_analysis.py](./result_analysis.py). This dictionary uses labels of the data as keys and the locations where the data is stored as values.
 
